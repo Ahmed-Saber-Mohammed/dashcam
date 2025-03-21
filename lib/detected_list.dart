@@ -1,9 +1,7 @@
-
 import 'package:flutter/material.dart';
 
 import 'detected_details.dart';
 import 'model.dart';
-// Import the detail page
 
 class DetectedList extends StatefulWidget {
   const DetectedList({super.key});
@@ -21,6 +19,36 @@ class _DetectedListState extends State<DetectedList> {
     });
   }
 
+  void _confirmDelete(int index) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("Confirm Deletion"),
+          content: const Text("Are you sure you want to delete this item?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text("Cancel"),
+            ),
+            TextButton(
+              onPressed: () {
+                _deleteCar(index); // Proceed with deletion
+                Navigator.of(context).pop(); // Close the dialog
+              },
+              child: const Text(
+                "Delete",
+                style: TextStyle(color: Colors.red),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -32,7 +60,7 @@ class _DetectedListState extends State<DetectedList> {
         centerTitle: true,
         backgroundColor: Colors.white,
         iconTheme: const IconThemeData(
-          color:  Colors.white54, // Change back button color to red
+          color: Colors.white54,
         ),
       ),
       backgroundColor: Colors.white,
@@ -40,7 +68,7 @@ class _DetectedListState extends State<DetectedList> {
           ? const Center(
         child: Text(
           "No detected video",
-          style: TextStyle(color: Colors.black12, fontSize: 18),
+          style: TextStyle(color: Colors.red, fontSize: 18),
         ),
       )
           : ListView.builder(
@@ -87,7 +115,7 @@ class _DetectedListState extends State<DetectedList> {
                 ),
                 trailing: IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
-                  onPressed: () => _deleteCar(index),
+                  onPressed: () => _confirmDelete(index), // Call confirmation dialog
                 ),
               ),
             ),

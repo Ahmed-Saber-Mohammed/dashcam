@@ -1,13 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
-import 'package:dio/dio.dart';
-import 'package:permission_handler/permission_handler.dart';
-import 'package:image_gallery_saver/image_gallery_saver.dart';
-import 'dart:io';
-import 'dart:typed_data';
-import 'package:path_provider/path_provider.dart';
-
-
+import 'package:flutter_file_downloader/flutter_file_downloader.dart';
 import 'model.dart';
 
 class DetectedDetails extends StatefulWidget {
@@ -20,99 +13,67 @@ class DetectedDetails extends StatefulWidget {
 }
 
 class _DetectedDetailsState extends State<DetectedDetails> {
-  late VideoPlayerController _controller;
+  VideoPlayerController? _controller;
   bool _isPlaying = false;
+  double _progress = 0.0;
+  bool _videoError = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = VideoPlayerController.network(widget.object.videoUrl)
-      ..initialize().then((_) {
-        setState(() {}); // Update UI when video is ready
-      });
+    if (widget.object.videoUrl.isNotEmpty) {
+      _controller = VideoPlayerController.network(widget.object.videoUrl)
+        ..initialize().then((_) {
+          setState(() {});
+        }).catchError((error) {
+          setState(() {
+            _videoError = true;
+          });
+        });
+    } else {
+      _videoError = true;
+    }
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _controller?.dispose();
     super.dispose();
   }
 
   void _togglePlayPause() {
-    setState(() {
-      if (_controller.value.isPlaying) {
-        _controller.pause();
-        _isPlaying = false;
-      } else {
-        _controller.play();
-        _isPlaying = true;
-      }
-    });
-  }
-
-  Future<void> _downloadVideo(BuildContext context, String url) async {
-    try {
-      // Request storage permission
-      if (!await _requestPermission()) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Permission denied to save video')),
-        );
-        return;
-      }
-
-      // Get directory for saving the file
-      Directory? directory;
-      if (Platform.isAndroid) {
-        directory = await getExternalStorageDirectory();
-      } else {
-        directory = await getApplicationDocumentsDirectory();
-      }
-
-      if (directory == null) {
-        throw Exception("Failed to get directory");
-      }
-
-      String filePath = '${directory.path}/downloaded_video.mp4';
-
-      // Download the video
-      Dio dio = Dio();
-      var response = await dio.get(
-        url,
-        options: Options(responseType: ResponseType.bytes),
-      );
-
-      // Save the file
-      File file = File(filePath);
-      await file.writeAsBytes(response.data);
-
-      // Save to gallery
-      final result = await ImageGallerySaver.saveFile(filePath);
-
-      if (result['isSuccess'] == true) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Video saved to Gallery')),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Failed to save video')),
-        );
-      }
-    } catch (e) {
-      print("Error downloading video: $e"); // Debugging
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to download video: $e')),
-      );
+    if (_controller != null && _controller!.value.isInitialized) {
+      setState(() {
+        if (_controller!.value.isPlaying) {
+          _controller!.pause();
+          _isPlaying = false;
+        } else {
+          _controller!.play();
+          _isPlaying = true;
+        }
+      });
     }
   }
 
-
-  Future<bool> _requestPermission() async {
-    if (await Permission.storage.request().isGranted) {
-      return true;
-    } else if (await Permission.manageExternalStorage.request().isGranted) {
-      return true;
-    }
-    return false;
+  void _downloadVideo() {
+    FileDownloader.downloadFile(
+      url: widget.object.videoUrl,
+      onDownloadError: (String error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Download error: $error')),
+        );
+      },
+      onDownloadCompleted: (path) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Download complete!')),
+        );
+      },
+      onProgress: (fileName, progress) {
+        setState(() {
+          _progress = progress;
+        });
+      },
+    );
   }
 
   @override
@@ -142,14 +103,16 @@ class _DetectedDetailsState extends State<DetectedDetails> {
               ),
               const SizedBox(height: 20),
 
-              // Video Player
-              _controller.value.isInitialized
+              // Video Player or Error Message
+              _videoError
+                  ? const Text("No video available", style: TextStyle(fontSize: 18, color: Colors.red))
+                  : _controller != null && _controller!.value.isInitialized
                   ? AspectRatio(
-                aspectRatio: _controller.value.aspectRatio,
+                aspectRatio: _controller!.value.aspectRatio,
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
-                    VideoPlayer(_controller),
+                    VideoPlayer(_controller!),
                     Positioned(
                       child: IconButton(
                         icon: Icon(
@@ -163,26 +126,14 @@ class _DetectedDetailsState extends State<DetectedDetails> {
                   ],
                 ),
               )
-                  : const CircularProgressIndicator(), // Show loading indicator until video loads
+                  : const CircularProgressIndicator(),
 
               const SizedBox(height: 20),
 
-              // Play/Pause Button
-              ElevatedButton.icon(
-                onPressed: _togglePlayPause,
-                icon: Icon(_isPlaying ? Icons.pause : Icons.play_arrow),
-                label: Text(_isPlaying ? "Pause Video" : "Play Video"),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-
-              const SizedBox(height: 10),
 
               // Download Button
               ElevatedButton.icon(
-                onPressed: () => _downloadVideo(context, widget.object.videoUrl),
+                onPressed: _downloadVideo,
                 icon: const Icon(Icons.download),
                 label: const Text("Download Video"),
                 style: ElevatedButton.styleFrom(
@@ -190,6 +141,25 @@ class _DetectedDetailsState extends State<DetectedDetails> {
                   foregroundColor: Colors.white,
                 ),
               ),
+
+              const SizedBox(height: 10),
+
+              // Download Progress Indicator
+              if (_progress > 0 && _progress < 100)
+                Column(
+                  children: [
+                    LinearProgressIndicator(
+                      value: _progress / 100,
+                      backgroundColor: Colors.grey[300],
+                      color: Colors.blue,
+                      minHeight: 10,
+                    ),
+                    const SizedBox(height: 10),
+                    Text('${_progress.toStringAsFixed(2)} %',
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
             ],
           ),
         ),
