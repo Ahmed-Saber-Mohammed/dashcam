@@ -21,6 +21,7 @@ class _DetectedDetailsState extends State<DetectedDetails> {
   @override
   void initState() {
     super.initState();
+    print("Video URL: ${widget.object.videoUrl}");
     if (widget.object.videoUrl.isNotEmpty) {
       _controller = VideoPlayerController.network(widget.object.videoUrl)
         ..initialize().then((_) {
