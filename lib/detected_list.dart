@@ -33,9 +33,19 @@ class _DetectedListState extends State<DetectedList> {
         setState(() {
           objectsList =
               videos.map((video) {
+                String nameWithoutExtension = video.split('.').first;
+
+                // Expected format: YYYY-MM-DD_HH-MM-SS
+                List<String> parts = nameWithoutExtension.split('_');
+                String date = parts.length > 0 ? parts[0] : "Unknown";
+                String time =
+                    parts.length > 1
+                        ? parts[1].replaceAll('-', ':')
+                        : "Unknown";
+
                 return DetectedObject(
-                  date: "Unknown", // or extract from filename if applicable
-                  time: "Unknown",
+                  date: date, // or extract from filename if applicable
+                  time: time,
                   videoUrl: "$baseUrl/$video",
                 );
               }).toList();
