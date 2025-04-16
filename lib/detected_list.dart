@@ -46,7 +46,7 @@ class _DetectedListState extends State<DetectedList> {
                 return DetectedObject(
                   date: date, // or extract from filename if applicable
                   time: time,
-                  videoUrl: "$baseUrl/$video",
+                  videoUrl: "$baseUrl/videos/$video",
                 );
               }).toList();
         });

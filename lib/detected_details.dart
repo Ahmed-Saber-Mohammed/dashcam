@@ -19,22 +19,31 @@ class _DetectedDetailsState extends State<DetectedDetails> {
   bool _videoError = false;
 
   @override
-  void initState() {
-    super.initState();
-    print("Video URL: ${widget.object.videoUrl}");
-    if (widget.object.videoUrl.isNotEmpty) {
-      _controller = VideoPlayerController.network(widget.object.videoUrl)
-        ..initialize().then((_) {
-          setState(() {});
-        }).catchError((error) {
-          setState(() {
-            _videoError = true;
-          });
+void initState() {
+  super.initState();
+  print("Video URL: ${widget.object.videoUrl}");
+
+  final videoUri = Uri.tryParse(widget.object.videoUrl);
+  if (videoUri != null && videoUri.isAbsolute) {
+    _controller = VideoPlayerController.networkUrl(videoUri)
+      ..initialize().then((_) {
+        setState(() {
+          _videoError = false;
         });
-    } else {
+      }).catchError((error) {
+        print("Video init error: $error");
+        setState(() {
+          _videoError = true;
+        });
+      });
+  } else {
+    print("Invalid video URL");
+    setState(() {
       _videoError = true;
-    }
+    });
   }
+}
+
 
   @override
   void dispose() {
@@ -55,27 +64,37 @@ class _DetectedDetailsState extends State<DetectedDetails> {
       });
     }
   }
+void _downloadVideo() {
+  final url = widget.object.videoUrl;
+  final uri = Uri.tryParse(url);
 
-  void _downloadVideo() {
-    FileDownloader.downloadFile(
-      url: widget.object.videoUrl,
-      onDownloadError: (String error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Download error: $error')),
-        );
-      },
-      onDownloadCompleted: (path) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Download complete!')),
-        );
-      },
-      onProgress: (fileName, progress) {
-        setState(() {
-          _progress = progress;
-        });
-      },
+  if (uri == null || !uri.isAbsolute) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Invalid video URL')),
     );
+    return;
   }
+
+  FileDownloader.downloadFile(
+    url: url,
+    onDownloadError: (String error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Download error: $error')),
+      );
+    },
+    onDownloadCompleted: (path) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Download complete!')),
+      );
+    },
+    onProgress: (fileName, progress) {
+      setState(() {
+        _progress = progress;
+      });
+    },
+  );
+}
+
 
   @override
   Widget build(BuildContext context) {
