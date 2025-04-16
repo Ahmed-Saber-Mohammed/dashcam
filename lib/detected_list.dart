@@ -3,7 +3,8 @@ import 'package:dio/dio.dart';
 import 'detected_details.dart';
 import 'model.dart';
 
-const String baseUrl = "https://c327-41-33-62-121.ngrok-free.app";
+const String ngrokUrl = "https://c327-41-33-62-121.ngrok-free.app";
+const String baseUrl = "$ngrokUrl/videos";
 
 class DetectedList extends StatefulWidget {
   const DetectedList({super.key});
@@ -23,7 +24,7 @@ class _DetectedListState extends State<DetectedList> {
 
   Future<void> fetchDetectedVideos() async {
     try {
-      var response = await Dio().get("$baseUrl/videos");
+      var response = await Dio().get("$baseUrl");
       print("Response status: ${response.statusCode}");
       print("Response data: ${response.data}");
 
@@ -46,7 +47,7 @@ class _DetectedListState extends State<DetectedList> {
                 return DetectedObject(
                   date: date, // or extract from filename if applicable
                   time: time,
-                  videoUrl: "$baseUrl/videos/$video",
+                  videoUrl: "$baseUrl/$video",
                 );
               }).toList();
         });
@@ -58,12 +59,32 @@ class _DetectedListState extends State<DetectedList> {
     }
   }
 
-  void _deleteobject(int index) {
-    setState(() {
-      objectsList.removeAt(index);
-    });
-  }
+  void _deleteobject(int index) async {
+    final filename = objectsList[index].videoUrl.split('/').last;
 
+    try {
+      final response = await Dio().delete("$baseUrl/$filename");
+
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        setState(() {
+          objectsList.removeAt(index);
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Video deleted from server')),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Server error: ${response.statusCode}')),
+        );
+      }
+    } catch (e) {
+      print("Delete error: $e");
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
+    }
+  }
+  // Show confirmation dialog before deleting
   void _confirmDelete(int index) {
     showDialog(
       context: context,
@@ -104,73 +125,86 @@ class _DetectedListState extends State<DetectedList> {
         iconTheme: const IconThemeData(color: Colors.white54),
       ),
       backgroundColor: Colors.white,
-      body:
-          objectsList.isEmpty
-              ? const Center(
-                child: Text(
-                  "No detected video",
-                  style: TextStyle(color: Colors.red, fontSize: 18),
-                ),
-              )
-              : ListView.builder(
-                padding: const EdgeInsets.all(16),
-                itemCount: objectsList.length,
-                itemBuilder: (context, index) {
-                  final object = objectsList[index];
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => DetectedDetails(object: object),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        gradient: const LinearGradient(
-                          colors: [Color(0xFFFFFFFF), Color(0xFF00AE46)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.3),
-                            blurRadius: 8,
-                            offset: const Offset(2, 4),
-                          ),
-                        ],
-                      ),
-                      child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: 12,
-                        ),
-                        title: Text(
-                          "Date: ${object.date}",
-                          style: const TextStyle(
-                            color: Colors.black,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        subtitle: Text(
-                          "Time: ${object.time}",
-                          style: TextStyle(
-                            color: Colors.black12.withOpacity(0.8),
-                            fontSize: 15,
-                          ),
-                        ),
-                        trailing: IconButton(
-                          icon: const Icon(Icons.delete, color: Colors.red),
-                          onPressed: () => _confirmDelete(index),
+      body: RefreshIndicator(
+        onRefresh: fetchDetectedVideos,
+        child:
+            objectsList.isEmpty
+                ? ListView(
+                  // Ensures RefreshIndicator can scroll
+                  children: [
+                    Center(
+                      child: Padding(
+                        padding: EdgeInsets.only(top: 100),
+                        child: Text(
+                          "No detected video",
+                          style: TextStyle(color: Colors.red, fontSize: 18),
+                          textAlign: TextAlign.center,
                         ),
                       ),
                     ),
-                  );
-                },
-              ),
+                  ],
+                )
+                : ListView.builder(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: objectsList.length,
+                  itemBuilder: (context, index) {
+                    final object = objectsList[index];
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder:
+                                (context) => DetectedDetails(object: object),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        margin: const EdgeInsets.symmetric(vertical: 8),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFFFFFFFF), Color(0xFF00AE46)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 8,
+                              offset: const Offset(2, 4),
+                            ),
+                          ],
+                        ),
+                        child: ListTile(
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 12,
+                          ),
+                          title: Text(
+                            "Date: ${object.date}",
+                            style: const TextStyle(
+                              color: Colors.black,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          subtitle: Text(
+                            "Time: ${object.time}",
+                            style: TextStyle(
+                              color: Colors.black12.withOpacity(0.8),
+                              fontSize: 15,
+                            ),
+                          ),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => _confirmDelete(index),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+      ),
     );
   }
 }
