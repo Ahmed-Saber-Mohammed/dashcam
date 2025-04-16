@@ -3,7 +3,7 @@ import 'package:dio/dio.dart';
 import 'detected_details.dart';
 import 'model.dart';
 
-const String baseUrl = "http://172.30.103.54:5000/detection_videos";
+const String baseUrl = "https://c327-41-33-62-121.ngrok-free.app";
 
 class DetectedList extends StatefulWidget {
   const DetectedList({super.key});
@@ -13,7 +13,7 @@ class DetectedList extends StatefulWidget {
 }
 
 class _DetectedListState extends State<DetectedList> {
-  List<DetectedObject> carsList = [];
+  List<DetectedObject> objectsList = [];
 
   @override
   void initState() {
@@ -23,18 +23,22 @@ class _DetectedListState extends State<DetectedList> {
 
   Future<void> fetchDetectedVideos() async {
     try {
-      var response = await Dio().get(baseUrl);
+      var response = await Dio().get("$baseUrl/videos");
+      print("Response status: ${response.statusCode}");
+      print("Response data: ${response.data}");
+
       if (response.statusCode == 200) {
         List<dynamic> videos = response.data;
 
         setState(() {
-          carsList = videos.map((video) {
-            return DetectedObject(
-              data: video["date"] ?? "Unknown",
-              time: video["time"] ?? "Unknown",
-              videoUrl: "$baseUrl/${video["filename"]}",
-            );
-          }).toList();
+          objectsList =
+              videos.map((video) {
+                return DetectedObject(
+                  date: "Unknown", // or extract from filename if applicable
+                  time: "Unknown",
+                  videoUrl: "$baseUrl/$video",
+                );
+              }).toList();
         });
       } else {
         print("Error: Status code ${response.statusCode}");
@@ -44,9 +48,9 @@ class _DetectedListState extends State<DetectedList> {
     }
   }
 
-  void _deleteCar(int index) {
+  void _deleteobject(int index) {
     setState(() {
-      carsList.removeAt(index);
+      objectsList.removeAt(index);
     });
   }
 
@@ -66,13 +70,10 @@ class _DetectedListState extends State<DetectedList> {
             ),
             TextButton(
               onPressed: () {
-                _deleteCar(index);
+                _deleteobject(index);
                 Navigator.of(context).pop();
               },
-              child: const Text(
-                "Delete",
-                style: TextStyle(color: Colors.red),
-              ),
+              child: const Text("Delete", style: TextStyle(color: Colors.red)),
             ),
           ],
         );
@@ -90,71 +91,76 @@ class _DetectedListState extends State<DetectedList> {
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
-        iconTheme: const IconThemeData(
-          color: Colors.white54,
-        ),
+        iconTheme: const IconThemeData(color: Colors.white54),
       ),
       backgroundColor: Colors.white,
-      body: carsList.isEmpty
-          ? const Center(
-              child: Text(
-                "No detected video",
-                style: TextStyle(color: Colors.red, fontSize: 18),
-              ),
-            )
-          : ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: carsList.length,
-              itemBuilder: (context, index) {
-                final car = carsList[index];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => DetectedDetails(object: car),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(12),
-                      gradient: const LinearGradient(
-                        colors: [Color(0xFFFFFFFF), Color(0xFF00AE46)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(2, 4),
+      body:
+          objectsList.isEmpty
+              ? const Center(
+                child: Text(
+                  "No detected video",
+                  style: TextStyle(color: Colors.red, fontSize: 18),
+                ),
+              )
+              : ListView.builder(
+                padding: const EdgeInsets.all(16),
+                itemCount: objectsList.length,
+                itemBuilder: (context, index) {
+                  final object = objectsList[index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => DetectedDetails(object: object),
                         ),
-                      ],
+                      );
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12),
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFFFFFFFF), Color(0xFF00AE46)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 8,
+                            offset: const Offset(2, 4),
+                          ),
+                        ],
+                      ),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 12,
+                        ),
+                        title: Text(
+                          "Date: ${object.date}",
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        subtitle: Text(
+                          "Time: ${object.time}",
+                          style: TextStyle(
+                            color: Colors.black12.withOpacity(0.8),
+                            fontSize: 15,
+                          ),
+                        ),
+                        trailing: IconButton(
+                          icon: const Icon(Icons.delete, color: Colors.red),
+                          onPressed: () => _confirmDelete(index),
+                        ),
+                      ),
                     ),
-                    child: ListTile(
-                      contentPadding:
-                          const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      title: Text(
-                        "Date: ${car.data}",
-                        style: const TextStyle(
-                            color: Colors.black, fontWeight: FontWeight.bold),
-                      ),
-                      subtitle: Text(
-                        "Time: ${car.time}",
-                        style:
-                            TextStyle(color: Colors.black12.withOpacity(0.8), fontSize: 15),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete, color: Colors.red),
-                        onPressed: () => _confirmDelete(index),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
+                  );
+                },
+              ),
     );
   }
 }

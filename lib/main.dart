@@ -1,7 +1,5 @@
 
-
 import 'package:flutter/material.dart';
-
 import 'detected_list.dart';
 
 void main() {

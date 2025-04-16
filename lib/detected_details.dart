@@ -94,7 +94,7 @@ class _DetectedDetailsState extends State<DetectedDetails> {
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Text(
-                "Date: ${widget.object.data}",
+                "Date: ${widget.object.date}",
                 style: const TextStyle(color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
