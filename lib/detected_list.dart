@@ -3,11 +3,11 @@ import 'package:dio/dio.dart';
 import 'detected_details.dart';
 import 'model.dart';
 
-const String ngrokUrl = "https://c327-41-33-62-121.ngrok-free.app";
-const String baseUrl = "$ngrokUrl/videos";
+const String baseUrl = "";
 
 class DetectedList extends StatefulWidget {
-  const DetectedList({super.key});
+  final String baseUrl;
+  const DetectedList({super.key, required this.baseUrl});
 
   @override
   _DetectedListState createState() => _DetectedListState();
@@ -24,7 +24,7 @@ class _DetectedListState extends State<DetectedList> {
 
   Future<void> fetchDetectedVideos() async {
     try {
-      var response = await Dio().get("$baseUrl");
+      var response = await Dio().get(widget.baseUrl);
       print("Response status: ${response.statusCode}");
       print("Response data: ${response.data}");
 
@@ -47,7 +47,7 @@ class _DetectedListState extends State<DetectedList> {
                 return DetectedObject(
                   date: date, // or extract from filename if applicable
                   time: time,
-                  videoUrl: "$baseUrl/$video",
+                  videoUrl: "$baseUrl/$videos",
                 );
               }).toList();
         });
