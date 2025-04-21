@@ -18,24 +18,34 @@ class _DetectedDetailsState extends State<DetectedDetails> {
   double _progress = 0.0;
   bool _videoError = false;
 
-  @override
+@override
 void initState() {
   super.initState();
   print("Video URL: ${widget.object.videoUrl}");
 
   final videoUri = Uri.tryParse(widget.object.videoUrl);
   if (videoUri != null && videoUri.isAbsolute) {
-    _controller = VideoPlayerController.networkUrl(videoUri)
-      ..initialize().then((_) {
+    _controller = VideoPlayerController.networkUrl(videoUri);
+
+    _controller!.initialize().then((_) {
+      if (mounted) {
         setState(() {
           _videoError = false;
         });
-      }).catchError((error) {
-        print("Video init error: $error");
+
+        // 🔍 Check for internal player errors
+        if (_controller!.value.hasError) {
+          print("Video controller error: ${_controller!.value.errorDescription}");
+        }
+      }
+    }).catchError((error) {
+      print("Video init error: $error");
+      if (mounted) {
         setState(() {
           _videoError = true;
         });
-      });
+      }
+    });
   } else {
     print("Invalid video URL");
     setState(() {
@@ -43,6 +53,7 @@ void initState() {
     });
   }
 }
+
 
 
   @override

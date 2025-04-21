@@ -45,9 +45,9 @@ class _DetectedListState extends State<DetectedList> {
                         : "Unknown";
 
                 return DetectedObject(
-                  date: date, // or extract from filename if applicable
+                  date: date,
                   time: time,
-                  videoUrl: "$baseUrl/$videos",
+                  videoUrl: "${widget.baseUrl}/$video",
                 );
               }).toList();
         });
@@ -63,7 +63,7 @@ class _DetectedListState extends State<DetectedList> {
     final filename = objectsList[index].videoUrl.split('/').last;
 
     try {
-      final response = await Dio().delete("$baseUrl/$filename");
+      final response = await Dio().delete("${widget.baseUrl}/$filename");
 
       if (response.statusCode == 200 || response.statusCode == 204) {
         setState(() {
@@ -84,6 +84,7 @@ class _DetectedListState extends State<DetectedList> {
       ).showSnackBar(SnackBar(content: Text('Delete failed: $e')));
     }
   }
+
   // Show confirmation dialog before deleting
   void _confirmDelete(int index) {
     showDialog(

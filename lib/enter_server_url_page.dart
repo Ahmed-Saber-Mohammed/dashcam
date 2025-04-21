@@ -34,10 +34,10 @@ class _EnterServerIPPageState extends State<EnterServerIPPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Enter Server IP", style: TextStyle(color: Colors.white)),
-        backgroundColor: Colors.black,
+        title: const Text("Enter Server IP", style: TextStyle(color: Colors.black)),
+        backgroundColor: Colors.white,
         centerTitle: true,
       ),
       body: Padding(
@@ -54,16 +54,16 @@ class _EnterServerIPPageState extends State<EnterServerIPPage> {
                       controller: ipControllers[i],
                       keyboardType: TextInputType.number,
                       maxLength: 3,
-                      style: const TextStyle(color: Colors.white),
+                      style: const TextStyle(color: Colors.black),
                       decoration: InputDecoration(
                         counterText: "",
                         hintText: "${i + 1}st",
-                        hintStyle: const TextStyle(color: Colors.white30),
+                        hintStyle: const TextStyle(color: Color.fromARGB(77, 65, 58, 58)),
                         enabledBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color.fromARGB(255, 177, 18, 7)),
+                          borderSide: BorderSide(color: Colors.green),
                         ),
                         focusedBorder: const OutlineInputBorder(
-                          borderSide: BorderSide(color: Color.fromARGB(255, 177, 18, 7), width: 2),
+                          borderSide: BorderSide(color: Colors.green, width: 2),
                         ),
                       ),
                     ),
@@ -75,9 +75,9 @@ class _EnterServerIPPageState extends State<EnterServerIPPage> {
             ElevatedButton(
               onPressed: _navigateToDetectedList,
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color.fromARGB(255, 177, 18, 7),
+                backgroundColor: Colors.green,
               ),
-              child: const Text("Continue", style: TextStyle(color: Colors.white)),
+              child: const Text("Continue", style: TextStyle(color: Colors.black)),
             ),
           ],
         ),
