@@ -17,7 +17,7 @@ class _EnterServerIPPageState extends State<EnterServerIPPage> {
   void _navigateToDetectedList() {
     final parts = ipControllers.map((c) => c.text.trim()).toList();
     if (parts.every((part) => part.isNotEmpty && int.tryParse(part) != null)) {
-      final fullUrl = "http://${parts.join('.')}:5000/videos";
+      final fullUrl = "http://${parts.join('.')}:5000/detection_videos";
       Navigator.push(
         context,
         MaterialPageRoute(
